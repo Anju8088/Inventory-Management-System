@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Inventory Items</title>
+  <style>
+    body {
+      background-image: url('https://wallpapers.com/images/hd/cream-background-hlqtuxpe6seuhwzi.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-color: #f0f0f0;
+      height: 100vh;
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+    </style>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.4.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body>
+  <div class="container mt-4">
+    <h2>Inventory Items</h2>
+    <button id="addBtn" class="btn btn-success mb-3">Add Item</button>
+    <button id="logoutBtn" class="btn btn-secondary mb-3 float-end">Logout</button>
+
+    <table class="table table-bordered" cellspacing="15px" cellpadding="15px" id="itemsTable" border="1px" style="border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th>Name</th><th>Quantity</th><th>Price</th><th>Category</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <div class="modal" tabindex="-1" id="itemModal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="itemForm">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalTitle">Add Item</h5>
+            <button type="button" class="btn-close" id="closeModal"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="itemId" />
+            <div class="mb-3">
+              <label>Name</label>
+              <input type="text" id="name" class="form-control" required />
+            </div>
+            <div class="mb-3">
+              <label>Quantity</label>
+              <input type="number" id="quantity" class="form-control" required />
+            </div>
+            <div class="mb-3">
+              <label>Price</label>
+              <input type="number" step="0.01" id="price" class="form-control" required />
+            </div>
+            <div class="mb-3">
+              <label>Category</label>
+              <input type="text" id="category" class="form-control" required />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary" id="saveBtn">Save</button>
+            <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const modal = document.getElementById('itemModal');
+    const itemForm = document.getElementById('itemForm');
+    const modalTitle = document.getElementById('modalTitle');
+    const itemIdInput = document.getElementById('itemId');
+    const nameInput = document.getElementById('name');
+    const quantityInput = document.getElementById('quantity');
+    const priceInput = document.getElementById('price');
+    const categoryInput = document.getElementById('category');
+
+    const itemsTableBody = document.querySelector('#itemsTable tbody');
+    const addBtn = document.getElementById('addBtn');
+    const closeModalBtn = document.getElementById('closeModal');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+   
+    function showModal(edit = false) {
+      modal.style.display = 'block';
+      if (edit) {
+        modalTitle.textContent = 'Edit Item';
+      } else {
+        modalTitle.textContent = 'Add Item';
+        itemForm.reset();
+        itemIdInput.value = '';
+      }
+    }
+    function hideModal() {
+      modal.style.display = 'none';
+    }
+    async function fetchItems() {
+      const res = await fetch('/api/items');
+      if (res.status === 401) {
+        window.location.href = '/login';
+        return;
+      }
+      const items = await res.json();
+      itemsTableBody.innerHTML = '';
+      items.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${item.name}</td>
+          <td>${item.quantity}</td>
+          <td>${item.price.toFixed(2)}</td>
+          <td>${item.category}</td>
+          <td>
+            <button class="btn btn-sm btn-primary editBtn" data-id="${item.id}">Edit</button>
+            <button class="btn btn-sm btn-danger deleteBtn" data-id="${item.id}">Delete</button>
+          </td>
+        `;
+        itemsTableBody.appendChild(tr);
+      });
+
+      document.querySelectorAll('.editBtn').forEach(btn => {
+        btn.onclick = async () => {
+          const id = btn.getAttribute('data-id');
+          const res = await fetch(`/api/items/${id}`);
+          if (res.status === 401) {
+            window.location.href = '/login';
+            return;
+          }
+          const item = await res.json();
+          itemIdInput.value = item.id;
+          nameInput.value = item.name;
+          quantityInput.value = item.quantity;
+          priceInput.value = item.price;
+          categoryInput.value = item.category;
+          showModal(true);
+        };
+      });
+
+      document.querySelectorAll('.deleteBtn').forEach(btn => {
+        btn.onclick = async () => {
+          if (!confirm('Delete this item?')) return;
+          const id = btn.getAttribute('data-id');
+          const res = await fetch(`/api/items/${id}`, { method: 'DELETE' });
+          if (res.status === 401) {
+            window.location.href = '/login';
+            return;
+          }
+          if (res.ok) fetchItems();
+          else alert('Failed to delete item.');
+        };
+      });
+    }
+
+    addBtn.onclick = () => showModal(false);
+    closeModalBtn.onclick = hideModal;
+    cancelBtn.onclick = hideModal;
+
+    itemForm.onsubmit = async e => {
+      e.preventDefault();
+      const id = itemIdInput.value;
+      const itemData = {
+        name: nameInput.value,
+        quantity: parseInt(quantityInput.value),
+        price: parseFloat(priceInput.value),
+        category: categoryInput.value,
+      };
+      let res;
+      if (id) {
+        res = await fetch(`/api/items/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(itemData),
+        });
+      } else {
+        res = await fetch('/api/items', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(itemData),
+        });
+      }
+      if (res.status === 401) {
+        window.location.href = '/login';
+        return;
+      }
+      if (res.ok) {
+        fetchItems();
+        hideModal();
+      } else {
+        alert('Failed to save item.');
+      }
+    };
+
+    logoutBtn.onclick = () => {
+      window.location.href = '/logout';
+    };
+
+    fetchItems();
+    modal.style.display = 'none';
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.width = '100%';
+    modal.style.height = '100%';
+    modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+    modal.querySelector('.modal-dialog').style.margin = '10% auto';
+  </script>
+</body>
+</html>

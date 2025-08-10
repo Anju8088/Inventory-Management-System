@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login</title>
+  <style>
+    body {
+      background-image: url('https://wallpapers.com/images/hd/cream-background-bvwiaxrnedx1isac.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-color: #f0f0f0;
+      height: 100vh;
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+    </style>
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
+</head>
+<body class="bg-light">
+<h1 id="h1">Inventory Management System</h1>
+<style>
+    #h1 {
+      color: aqua;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    </style>
+  <div class="container mt-5">
+    <div class="row justify-content-center">
+      <div class="col-md-4">
+        <h3 id="h3">Manager Login</h3>
+        <style>
+   #h3{
+    color :blue;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+}
+    </style>
+        <form action="/login" method="post">
+          <div class="mb-3">
+            <input type="text" name="username" placeholder="Username" class="form-control" required />
+          </div>
+          <style>
+          .mb-3{
+          display: flex;
+    align-items: center;
+    justify-content: center;
+}
+    </style>
+          <div class="mb-3">
+            <input type="password" name="password" placeholder="Password" class="form-control" required />
+          </div>
+          <button class="btn-primary w-100" type="submit" id="btn1">Login</button>
+          <style>
+          #btn1 {
+ display: block;
+    margin: 0 auto;
+    padding: 10px 30px;
+}
+          
+          </style>
+          <div class="mt-3 text-danger"style="text-align: center;">
+            <script>
+              const urlParams = new URLSearchParams(window.location.search);
+              if (urlParams.has('error')) {
+                document.write('Invalid username or password!!!');
+              }
+            </script>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
